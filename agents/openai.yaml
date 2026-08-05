@@ -1,0 +1,13 @@
+interface:
+  display_name: Prompt Gate
+  short_description: Checks prompts before Codex or Claude runs them
+  default_prompt: Use $prompt-gate to review and optimize this request before execution.
+  icon_small: assets/icon.svg
+  icon_large: assets/icon.svg
+policy:
+  allow_implicit_invocation: true
+  products:
+  - chatgpt
+  - codex
+  - api
+  - atlas
