@@ -1,36 +1,36 @@
-# Automatic prompt-gate integration
+# Автоматическая интеграция Prompt Gate
 
-Merge these snippets into existing configuration. Never overwrite unrelated user settings or instructions.
+Добавлять эти фрагменты в существующие настройки. Не перезаписывать посторонние инструкции и параметры пользователя.
 
-## Codex: global review-first behavior
+## Codex: глобальный режим проверки
 
-Install the skill in the personal skills directory at `$HOME/.agents/skills/prompt-gate/`. Add this section to the global Codex instruction file, normally `~/.codex/AGENTS.md`:
+Установить skill в `$HOME/.agents/skills/prompt-gate/`. Добавить раздел в глобальный файл инструкций Codex `~/.codex/AGENTS.md`:
 
 ```markdown
 ## Prompt Gate
 
-- For every new execution-oriented request, invoke `$prompt-gate` in review mode before mutable work.
-- Read-only inspection and the minimum official-documentation lookup are allowed during review.
-- Do not edit files, run project commands, or call mutable tools until the user says `ЗАПУСКАЙ` or `EXECUTE`.
-- On approval, execute the last proposed prompt without reviewing it again unless the user materially changed it.
-- If there is no prior proposed prompt, ask the user to provide one.
+- Перед каждой новой задачей, предполагающей выполнение действий, вызывать `$prompt-gate` в режиме проверки.
+- Во время проверки разрешать только чтение и минимальную сверку с официальной документацией.
+- Не изменять файлы, не запускать команды проекта и не вызывать изменяющие инструменты, пока пользователь не напишет `ЗАПУСКАЙ` или `EXECUTE`.
+- После подтверждения выполнять последний предложенный prompt без повторной проверки, если пользователь существенно его не изменил.
+- Если ранее предложенного prompt нет, попросить пользователя прислать запрос.
 ```
 
-Codex applies this through persistent instructions; it is not a native pre-submit hook.
+Codex применяет это правило через постоянные инструкции. Это не нативный pre-submit hook.
 
-## Claude Code: skill and global instruction
+## Claude Code: skill и глобальная инструкция
 
-Install the skill at `~/.claude/skills/prompt-gate/`. Add this section to `~/.claude/CLAUDE.md`:
+Установить skill в `~/.claude/skills/prompt-gate/`. Добавить раздел в `~/.claude/CLAUDE.md`:
 
 ```markdown
 ## Prompt Gate
 
-Treat the PROMPT GATE system reminder as mandatory. For a new task, use `/prompt-gate` in review mode and do not call mutable tools. After the user says `ЗАПУСКАЙ` or `EXECUTE`, execute the last proposed prompt. If no proposal exists, ask for the prompt instead of guessing.
+Считать системное напоминание PROMPT GATE обязательным. Для новой задачи использовать `/prompt-gate` в режиме проверки и не вызывать изменяющие инструменты. После команды `ЗАПУСКАЙ` или `EXECUTE` выполнять последний предложенный prompt. Если предложения нет, запросить prompt, ничего не придумывая.
 ```
 
 ## Claude Code: UserPromptSubmit hook
 
-Merge one command variant into `~/.claude/settings.json`.
+Добавить подходящий вариант в существующий `~/.claude/settings.json`.
 
 Windows:
 
@@ -42,7 +42,8 @@ Windows:
         "hooks": [
           {
             "type": "command",
-            "command": "py \"%USERPROFILE%\\.claude\\skills\\prompt-gate\\scripts\\claude_user_prompt_hook.py\"",
+            "shell": "powershell",
+            "command": "py \"$env:USERPROFILE\\.claude\\skills\\prompt-gate\\scripts\\claude_user_prompt_hook.py\"",
             "timeout": 5
           }
         ]
@@ -52,7 +53,7 @@ Windows:
 }
 ```
 
-macOS or Linux:
+macOS или Linux:
 
 ```json
 {
@@ -72,12 +73,12 @@ macOS or Linux:
 }
 ```
 
-The command hook is deterministic and does not make an extra LLM request. It injects a short reminder before every prompt. Approval markers switch the reminder to execute mode, preventing an approval loop.
+Command hook работает детерминированно и не делает отдельный LLM-запрос. Он добавляет короткое системное напоминание перед каждым prompt. Команда подтверждения переключает его в режим выполнения, предотвращая цикл повторных проверок.
 
-## Quick verification
+## Быстрая проверка
 
-1. Start a new Codex or Claude Code session so global instructions reload.
-2. Submit: `Добавь CSV-экспорт в этот проект`.
-3. Confirm that the agent proposes a refined prompt and makes no edits.
-4. Submit: `ЗАПУСКАЙ`.
-5. Confirm that the agent executes the previously proposed prompt instead of reviewing it again.
+1. Открыть новую сессию Codex или Claude Code.
+2. Отправить: `Добавь CSV-экспорт в этот проект`.
+3. Убедиться, что агент предложил исправленный prompt и ничего не изменил.
+4. Отправить: `ЗАПУСКАЙ`.
+5. Убедиться, что агент выполнил ранее предложенный prompt без повторной проверки.
