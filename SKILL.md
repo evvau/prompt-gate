@@ -1,103 +1,103 @@
 ---
 name: prompt-gate
-description: Review and rewrite a user request before Codex or Claude executes it. Use when a prompt should be checked against the target platform's current official documentation, clarified, shortened, made safer, or converted into an execution-ready prompt; when a global prompt-review gate is enabled; or when the user asks to optimize, validate, preflight, intercept, or approve a prompt. Do not execute the underlying task during review. After the user explicitly says ЗАПУСКАЙ or EXECUTE, run the last approved prompt without reviewing it again unless it materially changed.
+description: Проверять и переписывать запрос пользователя до выполнения в Codex или Claude. Использовать, когда prompt нужно сверить с актуальной официальной документацией целевой платформы, уточнить, сократить, сделать безопаснее или превратить в готовый запрос; когда включён глобальный режим предварительной проверки; либо когда пользователь просит оптимизировать, проверить, перехватить или утвердить prompt. В режиме проверки не выполнять исходную задачу. После явной команды ЗАПУСКАЙ или EXECUTE выполнить последний одобренный prompt без повторной проверки, если он существенно не изменился.
 ---
 
 # Prompt Gate
 
-Turn vague or expensive requests into concise, platform-ready prompts. Separate review from execution so the user sees the proposed prompt before any mutable work begins.
+Преобразовывать расплывчатые или дорогие запросы в короткие prompts, готовые для целевой платформы. Отделять проверку от выполнения, чтобы пользователь увидел итоговый prompt до начала любых изменяющих действий.
 
-## Operating modes
+## Режимы работы
 
-Infer the mode from the latest user message:
+Определять режим по последнему сообщению пользователя:
 
-- **Review mode** is the default for a new task. Inspect and rewrite only.
-- **Execute mode** starts when the user says `ЗАПУСКАЙ`, `ВЫПОЛНЯЙ`, `EXECUTE`, or `RUN`, optionally followed by a prompt. Execute the last proposed prompt, or the prompt following the marker.
-- **Direct review mode** starts when the user invokes this skill explicitly and supplies a prompt.
+- **Режим проверки** — использовать по умолчанию для новой задачи. Только анализировать и переписывать запрос.
+- **Режим выполнения** — включать после команды `ЗАПУСКАЙ`, `ВЫПОЛНЯЙ`, `EXECUTE` или `RUN`, при необходимости с prompt после команды. Выполнять последний предложенный prompt либо текст после команды.
+- **Прямая проверка** — включать, когда пользователь явно вызывает этот skill и передаёт prompt.
 
-Never treat an approval marker as a new prompt to review. If no prior proposed prompt exists and the marker has no prompt after it, ask the user to paste the prompt; do not guess.
+Не считать команду подтверждения новым prompt для проверки. Если в переписке нет ранее предложенного prompt и после команды подтверждения ничего не указано, попросить пользователя прислать запрос; ничего не придумывать.
 
-## Review workflow
+## Процесс проверки
 
-### 1. Classify the request
+### 1. Классифицировать запрос
 
-Identify:
+Определить:
 
-- target surface: Codex, Claude Code, ChatGPT, Claude API, OpenAI API, or another tool;
-- intended outcome and deliverable;
-- relevant repository, files, URLs, attachments, or environment;
-- constraints, permissions, side effects, and acceptance checks;
-- whether the user wants analysis only or implementation.
+- целевую платформу: Codex, Claude Code, ChatGPT, Claude API, OpenAI API или другой инструмент;
+- ожидаемый результат и формат сдачи;
+- относящиеся к задаче репозиторий, файлы, ссылки, вложения и окружение;
+- ограничения, разрешения, побочные эффекты и критерии приёмки;
+- требуется только анализ или также реализация.
 
-If the platform is unspecified, infer it from the current host. State the inference only when it changes the proposed prompt.
+Если платформа не указана, определить её по текущей среде. Сообщать об этом предположении только тогда, когда оно влияет на предложенный prompt.
 
-### 2. Check only relevant documentation
+### 2. Проверить только нужную документацию
 
-Use official primary documentation when the request depends on current platform behavior, configuration, models, APIs, hooks, skills, permissions, or syntax. Read the smallest relevant section and cite only constraints that materially affect the rewrite.
+Использовать официальную первичную документацию, если запрос зависит от актуального поведения платформы, настроек, моделей, API, hooks, skills, разрешений или синтаксиса. Читать минимально необходимый раздел и ссылаться только на ограничения, которые действительно влияют на исправление prompt.
 
-Do not browse merely to decorate the answer. For stable, platform-agnostic tasks, apply the local rubric without a network lookup. This preserves tokens while still making a documentation-routing decision for every prompt.
+Не открывать документацию только ради украшения ответа. Для стабильных задач, не зависящих от платформы, применять локальные критерии без сетевого поиска. Для каждого prompt принимать решение о необходимости проверки документации, сохраняя токены.
 
-Read [references/platform-notes.md](references/platform-notes.md) when choosing documentation sources or adapting the prompt to Codex versus Claude. Never claim a feature exists unless the source or the current environment confirms it.
+При выборе источников или адаптации запроса под Codex и Claude читать [references/platform-notes.md](references/platform-notes.md). Не утверждать, что функция существует, если это не подтверждено источником или текущим окружением.
 
-### 3. Diagnose prompt quality
+### 3. Найти недостатки prompt
 
-Check for:
+Проверить:
 
-- missing goal, scope, context, inputs, constraints, output format, or definition of done;
-- ambiguous verbs such as “improve,” “fix,” or “make better” without acceptance criteria;
-- accidental authorization for destructive, external, paid, or irreversible actions;
-- contradictions between requested behavior and platform capabilities;
-- repeated context, long pasted material that can be referenced by path, and unnecessary process narration;
-- requests that combine unrelated deliverables and would be cheaper as separate turns.
+- отсутствуют ли цель, объём, контекст, входные данные, ограничения, формат результата или критерии готовности;
+- используются ли неоднозначные слова «улучши», «исправь» или «сделай лучше» без критериев приёмки;
+- не даёт ли запрос случайного разрешения на удаление, внешние действия, расходы или необратимые изменения;
+- не противоречат ли требования возможностям платформы;
+- нет ли повторов, длинных вставок вместо ссылки на файл и лишнего описания процесса;
+- не объединены ли независимые результаты, которые дешевле выполнить отдельными запросами.
 
-Ask no more than three questions, and only when the missing answers would materially change the result. Otherwise make conservative assumptions and include them in the proposed prompt.
+Задавать не более трёх вопросов и только тогда, когда ответы существенно изменят результат. В остальных случаях использовать осторожные предположения и включать их в предложенный prompt.
 
-### 4. Rewrite for execution
+### 4. Подготовить prompt для выполнения
 
-Write the shortest prompt that still contains:
+Составить самый короткий prompt, который всё ещё содержит:
 
-1. outcome;
-2. relevant context or paths;
-3. scope and exclusions;
-4. constraints and authority boundaries;
-5. deliverable format;
-6. verification or completion criteria.
+1. требуемый результат;
+2. нужный контекст или пути;
+3. объём работ и исключения;
+4. ограничения и границы полномочий;
+5. формат результата;
+6. критерии проверки и завершения.
 
-Prefer references to existing files and visible attachments over repeating their contents. Do not add generic role-play, motivational language, chain-of-thought requests, duplicated constraints, or “be very detailed” unless the task needs it.
+Ссылаться на существующие файлы и видимые вложения вместо повторного копирования их содержимого. Не добавлять ролевые формулировки, мотивационные фразы, запросы на скрытую цепочку рассуждений, повторяющиеся ограничения и требование «очень подробно», если это не требуется задачей.
 
-For simple tasks, use one compact paragraph. For complex tasks, use short labeled sections. Keep the proposed prompt in the user's language unless the target platform or artifact requires another language.
+Для простой задачи использовать один короткий абзац. Для сложной — короткие именованные разделы. Сохранять язык пользователя, если целевая платформа или создаваемый материал не требуют другого языка.
 
-### 5. Stop before execution
+### 5. Остановиться до выполнения
 
-During review mode:
+В режиме проверки:
 
-- allow only read-only inspection needed to understand the prompt or verify official documentation;
-- do not edit files, run project commands, send messages, create external resources, or invoke mutable tools;
-- present the proposal and wait for explicit approval.
+- разрешать только чтение, необходимое для понимания prompt или проверки официальной документации;
+- не изменять файлы, не запускать команды проекта, не отправлять сообщения, не создавать внешние ресурсы и не вызывать изменяющие инструменты;
+- показать исправленный prompt и дождаться явного подтверждения.
 
-If the user changes the proposed prompt materially, review the changed version once. Cosmetic edits do not reset approval.
+Если пользователь существенно изменил предложенный prompt, проверить изменённую версию один раз. Косметические правки не должны сбрасывать подтверждение.
 
-## Response format
+## Формат ответа
 
-Keep the review under 180 words excluding the proposed prompt. Omit empty sections.
+Ограничивать проверку 180 словами без учёта предложенного prompt. Не выводить пустые разделы.
 
 ```text
 PROMPT CHECK
 Статус: ГОТОВ | НУЖНО УТОЧНЕНИЕ | ЕСТЬ РИСК | НЕ ПОДДЕРЖИВАЕТСЯ
-Платформа: <target>
+Платформа: <целевая платформа>
 
 Что изменить:
-- <maximum five concise points>
+- <не более пяти коротких пунктов>
 
 Оптимизированный prompt:
-<ready-to-send prompt>
+<готовый запрос>
 
-Экономия токенов: <низкая | средняя | высокая> — <one reason>
+Экономия токенов: <низкая | средняя | высокая> — <одна причина>
 Следующий шаг: напишите ЗАПУСКАЙ, чтобы выполнить этот prompt.
 ```
 
-When no meaningful change is needed, say so in one line and still show the normalized prompt. When blocked, explain the platform limitation and offer the closest supported prompt.
+Если существенные исправления не нужны, сообщить об этом одной строкой и всё равно показать нормализованный prompt. Если запрос заблокирован, объяснить ограничение платформы и предложить ближайший поддерживаемый вариант.
 
-## Integration setup
+## Настройка автоматического перехвата
 
-When the user asks to install automatic interception, read [references/integration.md](references/integration.md). Use the bundled [scripts/claude_user_prompt_hook.py](scripts/claude_user_prompt_hook.py) for Claude Code's `UserPromptSubmit` hook. Do not invent a native Codex pre-submit hook; use global Codex instructions plus this skill unless current official documentation adds such a hook.
+Если пользователь просит установить автоматическую проверку, прочитать [references/integration.md](references/integration.md). Для `UserPromptSubmit` в Claude Code использовать [scripts/claude_user_prompt_hook.py](scripts/claude_user_prompt_hook.py). Не придумывать нативный pre-submit hook для Codex: использовать глобальные инструкции Codex вместе с этим skill, если актуальная официальная документация не добавила такой hook.

@@ -1,7 +1,8 @@
 interface:
   display_name: Prompt Gate
-  short_description: Checks prompts before Codex or Claude runs them
-  default_prompt: Use $prompt-gate to review and optimize this request before execution.
+  short_description: Проверяет prompt до запуска Codex или Claude
+  default_prompt: Используй $prompt-gate, чтобы проверить и улучшить этот запрос до
+    выполнения.
   icon_small: assets/icon.svg
   icon_large: assets/icon.svg
 policy:
