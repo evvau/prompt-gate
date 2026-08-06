@@ -2,6 +2,15 @@
 
 Добавлять эти фрагменты в существующие настройки. Не перезаписывать посторонние инструкции и параметры пользователя.
 
+## Поддерживаемые окружения
+
+| Клиент | Windows 10/11 | Ubuntu 20.04+ и другой Linux |
+| --- | --- | --- |
+| Codex CLI | `%USERPROFILE%\\.agents\\skills\\prompt-gate` | `~/.agents/skills/prompt-gate` |
+| Claude Code CLI | `%USERPROFILE%\\.claude\\skills\\prompt-gate` | `~/.claude/skills/prompt-gate` |
+
+Сам `SKILL.md` не зависит от ОС. Различаются только пути, оболочка и команда запуска Claude hook. Для Codex CLI отдельного hook-скрипта нет.
+
 ## Codex: глобальный режим проверки
 
 Установить skill в `$HOME/.agents/skills/prompt-gate/`. Добавить раздел в глобальный файл инструкций Codex `~/.codex/AGENTS.md`:
@@ -53,7 +62,7 @@ Windows:
 }
 ```
 
-macOS или Linux:
+Ubuntu/Linux:
 
 ```json
 {
@@ -63,7 +72,7 @@ macOS или Linux:
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ~/.claude/skills/prompt-gate/scripts/claude_user_prompt_hook.py",
+            "command": "python3 \"$HOME/.claude/skills/prompt-gate/scripts/claude_user_prompt_hook.py\"",
             "timeout": 5
           }
         ]
@@ -74,6 +83,13 @@ macOS или Linux:
 ```
 
 Command hook работает детерминированно и не делает отдельный LLM-запрос. Он добавляет короткое системное напоминание перед каждым prompt. Команда подтверждения переключает его в режим выполнения, предотвращая цикл повторных проверок.
+
+Перед настройкой проверить CLI и интерпретатор:
+
+- Windows: `codex --version`, `claude --version`, `py -3 --version`;
+- Ubuntu/Linux: `codex --version`, `claude --version`, `python3 --version`.
+
+После установки в Codex CLI использовать `/skills` или упоминание `$prompt-gate`. В Claude Code CLI использовать `/prompt-gate` и `/hooks` для проверки hook.
 
 ## Быстрая проверка
 
