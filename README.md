@@ -1,28 +1,33 @@
 # Prompt Gate
 
-Предварительная проверка и оптимизация prompts перед выполнением в **Codex** или **Claude Code**.
+Кроссплатформенная предварительная проверка и оптимизация prompts перед выполнением в **Codex CLI** или **Claude Code CLI**.
 
-Prompt Gate отделяет подготовку запроса от его выполнения: сначала показывает замечания и готовый исправленный prompt, затем ждёт явную команду `ЗАПУСКАЙ` или `EXECUTE`.
+Prompt Gate сначала показывает замечания и готовый исправленный prompt, затем ждёт явную команду `ЗАПУСКАЙ` или `EXECUTE`. До подтверждения он не должен изменять файлы или запускать изменяющие инструменты.
 
-> Технически используется **hook**, а не webhook: внешний сервер для базового режима не нужен.
+> Используется локальный **hook**, а не webhook. Внешний сервер и API-ключ для базового режима не нужны.
 
-**[Подробная инструкция по установке для Codex и Claude Code](INSTALL.md)**
+## Поддерживаемые платформы
 
-## Русская версия
+| Система | Codex CLI | Claude Code CLI |
+| --- | --- | --- |
+| Windows 10/11 | Skill + `AGENTS.md` | Skill + `CLAUDE.md` + `UserPromptSubmit` |
+| Ubuntu 20.04+ | Skill + `AGENTS.md` | Skill + `CLAUDE.md` + `UserPromptSubmit` |
 
-### Что делает
+Полная пошаговая инструкция:
 
-- определяет целевую платформу и ожидаемый результат;
+**[INSTALL.md — Windows, Ubuntu, Codex CLI и Claude Code CLI](INSTALL.md)**
+
+## Что делает
+
+- определяет целевую платформу, ОС и ожидаемый результат;
 - находит недостающий контекст, ограничения и критерии готовности;
 - выявляет рискованные, платные, внешние и необратимые действия;
-- решает, нужна ли сверка с актуальной официальной документацией;
+- сверяется только с релевантной официальной документацией;
 - удаляет повторы и лишние инструкции, экономя токены;
-- предлагает короткий готовый prompt;
-- не начинает изменяющую работу до явного подтверждения пользователя.
+- предлагает короткий prompt, готовый к выполнению;
+- ждёт явного подтверждения пользователя.
 
-Для стабильных задач, не зависящих от платформы, skill применяет локальные правила без ненужного сетевого поиска. Для актуальных настроек, API, hooks, skills, моделей и разрешений используются официальные источники соответствующей платформы.
-
-### Как это работает
+## Как работает
 
 1. Пользователь отправляет обычный запрос.
 2. Prompt Gate включает режим проверки.
@@ -32,7 +37,7 @@ Prompt Gate отделяет подготовку запроса от его в�
 
 Если пользователь существенно изменил предложенный запрос, Prompt Gate проверяет новую версию ещё раз.
 
-### Пример
+## Пример
 
 Исходный запрос:
 
@@ -60,15 +65,15 @@ PROMPT CHECK
 Следующий шаг: напишите ЗАПУСКАЙ.
 ```
 
-### Использование
+## Использование в CLI
 
-Codex:
+Codex CLI:
 
 ```text
 $prompt-gate Проверь и оптимизируй этот запрос: ...
 ```
 
-Claude Code:
+Claude Code CLI:
 
 ```text
 /prompt-gate Проверь и оптимизируй этот запрос: ...
@@ -80,37 +85,27 @@ Claude Code:
 ЗАПУСКАЙ
 ```
 
-### Установка
+## Кроссплатформенность
 
-#### Codex
+- `SKILL.md` не зависит от операционной системы.
+- Bundled hook написан на Python 3 и использует только стандартную библиотеку.
+- На Windows hook запускается через `py -3` в PowerShell.
+- На Ubuntu/Linux hook запускается через `python3` в Bash.
+- Codex CLI и Claude Code CLI используют официальные пользовательские каталоги skills.
 
-Скопируйте репозиторий в персональную папку skills:
+## Ограничения
 
-- Windows: `%USERPROFILE%\.agents\skills\prompt-gate`
-- macOS/Linux: `~/.agents/skills/prompt-gate`
+- Claude Code CLI поддерживает настоящий `UserPromptSubmit` hook до обработки prompt моделью.
+- Codex CLI использует instruction-level gate через skill и глобальный `AGENTS.md`; это не жёсткая граница безопасности.
+- Для принудительного запрета отдельных инструментов нужна отдельная политика разрешений или `PreToolUse` hook.
 
-Чтобы проверка применялась автоматически к новым задачам, добавьте глобальные правила из [references/integration.md](references/integration.md) в `~/.codex/AGENTS.md`.
-
-#### Claude Code
-
-Скопируйте репозиторий в:
-
-- Windows: `%USERPROFILE%\.claude\skills\prompt-gate`
-- macOS/Linux: `~/.claude/skills/prompt-gate`
-
-Затем подключите локальный `UserPromptSubmit` hook по инструкции в [references/integration.md](references/integration.md). Скрипт [scripts/claude_user_prompt_hook.py](scripts/claude_user_prompt_hook.py) не выполняет отдельный LLM-запрос.
-
-### Ограничения
-
-- В Claude Code используется настоящий `UserPromptSubmit` hook до обработки prompt моделью.
-- В Codex применяется instruction-level gate через skill и глобальный `AGENTS.md`; это не системная граница безопасности.
-- Для жёсткой блокировки инструментов требуется отдельная политика `PreToolUse` или разрешений.
-
-### Состав
+## Состав
 
 ```text
 prompt-gate/
 ├── SKILL.md
+├── INSTALL.md
+├── README.md
 ├── agents/openai.yaml
 ├── assets/icon.svg
 ├── references/integration.md
@@ -120,8 +115,8 @@ prompt-gate/
 
 ## English summary
 
-Prompt Gate reviews and rewrites requests before Codex or Claude Code performs mutable work. It identifies missing context and risky actions, checks relevant official documentation when necessary, proposes a token-efficient execution-ready prompt, and waits for `EXECUTE` or `RUN`.
+Prompt Gate is a cross-platform skill for Windows and Ubuntu that reviews and rewrites requests before Codex CLI or Claude Code CLI performs mutable work. It identifies missing context and risky actions, checks relevant official documentation when needed, proposes a token-efficient execution-ready prompt, and waits for `EXECUTE` or `RUN`.
 
-- Codex: install as a personal skill and enable the global `AGENTS.md` rule.
-- Claude Code: install as a personal skill and configure the bundled `UserPromptSubmit` hook.
-- Full operating instructions are in [SKILL.md](SKILL.md).
+- Codex CLI: install as a personal skill and enable the global `AGENTS.md` rule.
+- Claude Code CLI: install as a personal skill and configure the bundled `UserPromptSubmit` hook.
+- See [INSTALL.md](INSTALL.md) for Windows and Ubuntu commands.
