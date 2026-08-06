@@ -7,6 +7,19 @@ description: Проверять и переписывать запрос пол�
 
 Преобразовывать расплывчатые или дорогие запросы в короткие prompts, готовые для целевой платформы. Отделять проверку от выполнения, чтобы пользователь увидел итоговый prompt до начала любых изменяющих действий.
 
+## Совместимость
+
+Работать одинаково в Codex CLI, IDE-интеграции Codex и Claude Code CLI на Windows и Ubuntu/Linux. Основной процесс проверки не должен зависеть от ОС.
+
+Когда запрос касается установки, настройки или команд терминала:
+
+- определять целевой клиент: Codex CLI или Claude Code CLI;
+- определять ОС и оболочку: Windows PowerShell/CMD либо Ubuntu/Linux Bash;
+- использовать пользовательские пути Codex `$HOME/.agents/skills/prompt-gate/` и Claude Code `~/.claude/skills/prompt-gate/`, раскрывая их Windows-эквиваленты через `%USERPROFILE%` или `$env:USERPROFILE`;
+- не смешивать синтаксис PowerShell и Bash в одном блоке команд;
+- использовать `py -3` для bundled hook на Windows и `python3` на Ubuntu/Linux;
+- не обещать `UserPromptSubmit` для Codex CLI: там применять skill вместе с глобальным `AGENTS.md`.
+
 ## Режимы работы
 
 Определять режим по последнему сообщению пользователя:
@@ -101,3 +114,5 @@ PROMPT CHECK
 ## Настройка автоматического перехвата
 
 Если пользователь просит установить автоматическую проверку, прочитать [references/integration.md](references/integration.md). Для `UserPromptSubmit` в Claude Code использовать [scripts/claude_user_prompt_hook.py](scripts/claude_user_prompt_hook.py). Не придумывать нативный pre-submit hook для Codex: использовать глобальные инструкции Codex вместе с этим skill, если актуальная официальная документация не добавила такой hook.
+
+При выдаче инструкции показывать только разделы для выбранных пользователем ОС и CLI. Если ОС или клиент не указаны и это нельзя определить из окружения, дать короткую таблицу выбора между Windows/Ubuntu и Codex CLI/Claude Code CLI, не дублируя полную инструкцию четыре раза.
