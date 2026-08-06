@@ -1,49 +1,57 @@
 # Установка Prompt Gate
 
-Эта инструкция устанавливает Prompt Gate глобально для всех проектов. Основные команды приведены для Windows PowerShell; ниже есть отдельный раздел для macOS и Linux.
+Prompt Gate поддерживает:
 
-## Что будет установлено
+| Операционная система | Codex CLI | Claude Code CLI |
+| --- | --- | --- |
+| Windows 10/11 | Да | Да |
+| Ubuntu 20.04+ | Да | Да |
 
-- skill `prompt-gate`;
-- глобальное правило проверки для Codex;
-- глобальная инструкция и локальный `UserPromptSubmit` hook для Claude Code;
-- команда подтверждения `ЗАПУСКАЙ` или `EXECUTE`.
+Skill работает локально. Внешний webhook, сервер и API-ключ не требуются. Для Claude Code используется локальный `UserPromptSubmit` hook; для Codex CLI — skill и глобальная инструкция `AGENTS.md`, поскольку у Codex нет документированного аналога этого hook.
 
-Prompt Gate использует **hook**, а не внешний webhook. Для базовой работы сервер и API-ключ не нужны.
+## Что выбрать
 
-## Вариант 1: Windows — Codex
+- Пользуетесь Codex CLI — установите раздел для Codex.
+- Пользуетесь Claude Code CLI — установите раздел для Claude.
+- Пользуетесь обоими — установите skill в обе папки.
+- Нужен skill только в одном репозитории — используйте раздел «Установка для одного проекта».
 
-### 1. Установить skill
+## Windows — Codex CLI
 
-Открыть PowerShell и выполнить:
+### 1. Проверить зависимости
+
+Откройте PowerShell:
 
 ```powershell
-New-Item -ItemType Directory -Force "$env:USERPROFILE\.agents\skills"
-git clone https://github.com/evvau/prompt-gate.git "$env:USERPROFILE\.agents\skills\prompt-gate"
+git --version
+codex --version
 ```
 
-Если команда `git` не найдена, скачать ZIP через кнопку **Code → Download ZIP**, распаковать архив, переименовать папку в `prompt-gate` и поместить её сюда:
+### 2. Установить skill глобально
 
-```text
-%USERPROFILE%\.agents\skills\prompt-gate
+```powershell
+$SkillDir = Join-Path $env:USERPROFILE ".agents\skills\prompt-gate"
+New-Item -ItemType Directory -Force (Split-Path $SkillDir)
+git clone https://github.com/evvau/prompt-gate.git $SkillDir
+Test-Path (Join-Path $SkillDir "SKILL.md")
 ```
 
-Внутри папки должен находиться файл:
+Последняя команда должна вывести `True`.
 
-```text
-%USERPROFILE%\.agents\skills\prompt-gate\SKILL.md
+Если папка уже существует, обновите её:
+
+```powershell
+git -C "$env:USERPROFILE\.agents\skills\prompt-gate" pull
 ```
 
-### 2. Включить автоматическую проверку
-
-Создать папку настроек и открыть глобальный файл инструкций:
+### 3. Включить проверку всех новых задач
 
 ```powershell
 New-Item -ItemType Directory -Force "$env:USERPROFILE\.codex"
 notepad "$env:USERPROFILE\.codex\AGENTS.md"
 ```
 
-Добавить в конец файла, сохранив существующие инструкции:
+Добавьте в конец файла, не удаляя существующие правила:
 
 ```markdown
 ## Prompt Gate
@@ -55,56 +63,53 @@ notepad "$env:USERPROFILE\.codex\AGENTS.md"
 - Если ранее предложенного prompt нет, попроси пользователя прислать запрос.
 ```
 
-Если в `%USERPROFILE%\.codex` уже существует непустой `AGENTS.override.md`, Codex использует его вместо глобального `AGENTS.md`. В таком случае добавить этот раздел в `AGENTS.override.md`.
+Если существует непустой `%USERPROFILE%\.codex\AGENTS.override.md`, Codex использует его вместо глобального `AGENTS.md`. Тогда добавьте раздел туда.
 
-### 3. Проверить Codex
+### 4. Проверить в Codex CLI
 
-Открыть новую сессию Codex и отправить:
+Запустите:
+
+```powershell
+codex
+```
+
+В интерактивной сессии откройте `/skills`, убедитесь, что виден `prompt-gate`, затем отправьте:
 
 ```text
 $prompt-gate Проверь запрос: добавь CSV-экспорт в текущий проект
 ```
 
-Ожидаемый результат: Codex показывает замечания и исправленный prompt, но не меняет файлы. Для выполнения написать:
+Codex должен предложить исправленный prompt и остановиться до команды `ЗАПУСКАЙ`.
 
-```text
-ЗАПУСКАЙ
-```
+## Windows — Claude Code CLI
 
-## Вариант 2: Windows — Claude Code
-
-### 1. Установить skill
+### 1. Проверить зависимости
 
 ```powershell
-New-Item -ItemType Directory -Force "$env:USERPROFILE\.claude\skills"
-git clone https://github.com/evvau/prompt-gate.git "$env:USERPROFILE\.claude\skills\prompt-gate"
+git --version
+claude --version
+py -3 --version
 ```
 
-При установке из ZIP итоговый файл должен находиться здесь:
+Python 3 нужен только локальному hook и не требует дополнительных пакетов.
 
-```text
-%USERPROFILE%\.claude\skills\prompt-gate\SKILL.md
-```
-
-### 2. Проверить Python
-
-Hook запускается локальным Python-скриптом:
+### 2. Установить skill глобально
 
 ```powershell
-py --version
+$SkillDir = Join-Path $env:USERPROFILE ".claude\skills\prompt-gate"
+New-Item -ItemType Directory -Force (Split-Path $SkillDir)
+git clone https://github.com/evvau/prompt-gate.git $SkillDir
+Test-Path (Join-Path $SkillDir "SKILL.md")
 ```
 
-Если команда не найдена, установить Python 3 и убедиться, что команда `py` работает.
-
-### 3. Добавить глобальное правило Claude
-
-Открыть файл:
+### 3. Добавить глобальную инструкцию
 
 ```powershell
+New-Item -ItemType Directory -Force "$env:USERPROFILE\.claude"
 notepad "$env:USERPROFILE\.claude\CLAUDE.md"
 ```
 
-Добавить в конец, не удаляя существующие инструкции:
+Добавьте:
 
 ```markdown
 ## Prompt Gate
@@ -114,15 +119,13 @@ notepad "$env:USERPROFILE\.claude\CLAUDE.md"
 
 ### 4. Подключить UserPromptSubmit hook
 
-Открыть пользовательские настройки Claude Code:
+Откройте пользовательские настройки:
 
 ```powershell
 notepad "$env:USERPROFILE\.claude\settings.json"
 ```
 
-Добавить объект `UserPromptSubmit` внутрь существующего объекта `hooks`. Не заменять весь файл, если в нём уже есть другие настройки или hooks.
-
-Для нового пустого файла использовать:
+Если файл пустой, используйте:
 
 ```json
 {
@@ -133,7 +136,7 @@ notepad "$env:USERPROFILE\.claude\settings.json"
           {
             "type": "command",
             "shell": "powershell",
-            "command": "py \"$env:USERPROFILE\\.claude\\skills\\prompt-gate\\scripts\\claude_user_prompt_hook.py\"",
+            "command": "py -3 \"$env:USERPROFILE\\.claude\\skills\\prompt-gate\\scripts\\claude_user_prompt_hook.py\"",
             "timeout": 5
           }
         ]
@@ -143,49 +146,102 @@ notepad "$env:USERPROFILE\.claude\settings.json"
 }
 ```
 
-### 5. Проверить Claude Code
+Если `settings.json` уже содержит настройки, добавьте `UserPromptSubmit` внутрь существующего объекта `hooks`; не заменяйте весь файл.
 
-В Claude Code выполнить:
+### 5. Проверить в Claude Code CLI
 
-```text
-/hooks
+```powershell
+claude doctor
+claude
 ```
 
-В разделе `UserPromptSubmit` должен отображаться command hook из пользовательских настроек. Затем отправить:
+В Claude Code выполните `/hooks`, затем:
 
 ```text
 /prompt-gate Проверь запрос: добавь CSV-экспорт в текущий проект
 ```
 
-Claude должен предложить исправленный prompt и остановиться до команды:
+## Ubuntu — Codex CLI
 
-```text
-ЗАПУСКАЙ
-```
-
-## macOS и Linux — Codex
+### 1. Проверить зависимости
 
 ```bash
-mkdir -p ~/.agents/skills
-git clone https://github.com/evvau/prompt-gate.git ~/.agents/skills/prompt-gate
-mkdir -p ~/.codex
+sudo apt update
+sudo apt install -y git
+git --version
+codex --version
 ```
 
-Добавить раздел Prompt Gate из инструкции для Windows в `~/.codex/AGENTS.md`, затем проверить skill командой:
+### 2. Установить skill глобально
+
+```bash
+mkdir -p "$HOME/.agents/skills"
+git clone https://github.com/evvau/prompt-gate.git "$HOME/.agents/skills/prompt-gate"
+test -f "$HOME/.agents/skills/prompt-gate/SKILL.md" && echo "Prompt Gate установлен"
+```
+
+Если папка уже существует:
+
+```bash
+git -C "$HOME/.agents/skills/prompt-gate" pull
+```
+
+### 3. Включить проверку всех новых задач
+
+```bash
+mkdir -p "$HOME/.codex"
+nano "$HOME/.codex/AGENTS.md"
+```
+
+Добавьте тот же раздел `## Prompt Gate`, который приведён выше для Windows Codex. Если существует непустой `~/.codex/AGENTS.override.md`, добавьте правила туда.
+
+### 4. Проверить в Codex CLI
+
+```bash
+codex
+```
+
+В сессии откройте `/skills`, затем отправьте:
 
 ```text
 $prompt-gate Проверь запрос: добавь CSV-экспорт в текущий проект
 ```
 
-## macOS и Linux — Claude Code
+## Ubuntu — Claude Code CLI
+
+### 1. Проверить зависимости
 
 ```bash
-mkdir -p ~/.claude/skills
-git clone https://github.com/evvau/prompt-gate.git ~/.claude/skills/prompt-gate
+sudo apt update
+sudo apt install -y git python3
+git --version
 python3 --version
+claude --version
 ```
 
-Добавить правило Prompt Gate в `~/.claude/CLAUDE.md`. Затем добавить в существующий `~/.claude/settings.json`:
+### 2. Установить skill глобально
+
+```bash
+mkdir -p "$HOME/.claude/skills"
+git clone https://github.com/evvau/prompt-gate.git "$HOME/.claude/skills/prompt-gate"
+test -f "$HOME/.claude/skills/prompt-gate/SKILL.md" && echo "Prompt Gate установлен"
+```
+
+### 3. Добавить глобальную инструкцию
+
+```bash
+nano "$HOME/.claude/CLAUDE.md"
+```
+
+Добавьте раздел `## Prompt Gate`, приведённый выше для Windows Claude Code.
+
+### 4. Подключить UserPromptSubmit hook
+
+```bash
+nano "$HOME/.claude/settings.json"
+```
+
+Если файл пустой, используйте:
 
 ```json
 {
@@ -195,7 +251,7 @@ python3 --version
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ~/.claude/skills/prompt-gate/scripts/claude_user_prompt_hook.py",
+            "command": "python3 \"$HOME/.claude/skills/prompt-gate/scripts/claude_user_prompt_hook.py\"",
             "timeout": 5
           }
         ]
@@ -205,44 +261,99 @@ python3 --version
 }
 ```
 
-## Установка только для одного проекта
+При существующем `settings.json` объедините новый hook с текущими настройками.
 
-Если skill не должен действовать глобально, разместить его внутри конкретного проекта:
+### 5. Проверить в Claude Code CLI
 
-| Платформа | Папка проекта |
-| --- | --- |
-| Codex | `.agents/skills/prompt-gate/` |
-| Claude Code | `.claude/skills/prompt-gate/` |
+```bash
+claude doctor
+claude
+```
 
-Глобальные файлы `~/.codex/AGENTS.md` и `~/.claude/CLAUDE.md` в этом варианте не изменять. Проектные правила можно добавить в `AGENTS.md` или `CLAUDE.md` самого проекта.
+В интерактивной сессии выполните `/hooks`, затем:
+
+```text
+/prompt-gate Проверь запрос: добавь CSV-экспорт в текущий проект
+```
+
+## Установка для одного проекта
+
+Запустите команду из корня проекта.
+
+### Windows PowerShell
+
+Codex CLI:
+
+```powershell
+git clone https://github.com/evvau/prompt-gate.git ".agents\skills\prompt-gate"
+```
+
+Claude Code CLI:
+
+```powershell
+git clone https://github.com/evvau/prompt-gate.git ".claude\skills\prompt-gate"
+```
+
+### Ubuntu Bash
+
+Codex CLI:
+
+```bash
+git clone https://github.com/evvau/prompt-gate.git ".agents/skills/prompt-gate"
+```
+
+Claude Code CLI:
+
+```bash
+git clone https://github.com/evvau/prompt-gate.git ".claude/skills/prompt-gate"
+```
+
+В проектном режиме добавьте правила в `AGENTS.md` или `CLAUDE.md` проекта. Для Claude hook можно добавить в `.claude/settings.json` и изменить путь скрипта на проектный.
+
+## Установка из ZIP
+
+Если Git недоступен:
+
+1. Откройте страницу репозитория.
+2. Нажмите **Code → Download ZIP**.
+3. Распакуйте архив.
+4. Переименуйте папку в `prompt-gate`.
+5. Переместите её в папку выбранного CLI из таблицы в начале инструкции.
+
+Файл `SKILL.md` должен лежать непосредственно внутри `prompt-gate`, без дополнительного уровня `prompt-gate-main`.
 
 ## Обновление
 
-Codex на Windows:
+Windows PowerShell:
 
 ```powershell
 git -C "$env:USERPROFILE\.agents\skills\prompt-gate" pull
-```
-
-Claude Code на Windows:
-
-```powershell
 git -C "$env:USERPROFILE\.claude\skills\prompt-gate" pull
 ```
 
-macOS/Linux: выполнить `git pull` внутри соответствующей папки `prompt-gate`.
+Ubuntu:
+
+```bash
+git -C "$HOME/.agents/skills/prompt-gate" pull
+git -C "$HOME/.claude/skills/prompt-gate" pull
+```
+
+Выполняйте только команду для установленного клиента.
 
 ## Устранение проблем
 
-- Skill не найден: проверить, что `SKILL.md` лежит непосредственно внутри папки `prompt-gate`, без дополнительного уровня `prompt-gate-main`.
-- Codex сразу выполняет задачу: проверить глобальный `AGENTS.md` и наличие `AGENTS.override.md`.
-- Claude не запускает hook: выполнить `/hooks`, проверить путь к скрипту и команду `py --version` или `python3 --version`.
-- Подтверждение снова проверяется: использовать отдельное сообщение `ЗАПУСКАЙ` или `EXECUTE`.
-- Не перезаписывать существующий `settings.json`: объединять новые hooks с имеющимися настройками.
+- Skill не виден в Codex CLI: проверьте путь к `SKILL.md` и откройте новую сессию; затем вызовите `/skills`.
+- Codex сразу выполняет задачу: проверьте `AGENTS.md` и наличие `AGENTS.override.md`.
+- Skill не виден в Claude Code CLI: проверьте путь и вызовите `/prompt-gate`; если верхняя папка skills создана во время активной сессии, откройте новую сессию.
+- Hook Claude не запускается: вызовите `/hooks`, `claude doctor` и проверьте `py -3 --version` либо `python3 --version`.
+- Claude сообщает об ошибке JSON: проверьте запятые и кавычки в `settings.json`; stdout hook должен содержать только JSON.
+- Команда `ЗАПУСКАЙ` снова проверяется: отправляйте её отдельным сообщением.
 
 ## Официальная документация
 
-- [Codex: Build skills](https://developers.openai.com/codex/build-skills)
-- [Codex: AGENTS.md](https://developers.openai.com/codex/agent-configuration/agents-md)
-- [Claude Code: Skills](https://code.claude.com/docs/en/skills)
-- [Claude Code: Hooks](https://code.claude.com/docs/en/hooks)
+- [Codex: skills и пути установки](https://developers.openai.com/codex/build-skills)
+- [Codex: глобальные инструкции AGENTS.md](https://developers.openai.com/codex/agent-configuration/agents-md)
+- [Codex CLI](https://developers.openai.com/codex/cli)
+- [Claude Code: skills](https://code.claude.com/docs/en/skills)
+- [Claude Code: hooks](https://code.claude.com/docs/en/hooks)
+- [Claude Code: установка и Ubuntu](https://code.claude.com/docs/en/setup)
